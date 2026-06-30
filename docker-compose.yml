@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:18
+    container_name: uuid-pk-benchmark-db
+    environment:
+      POSTGRES_PASSWORD: benchmark
+      POSTGRES_DB: uuidbench
+    ports:
+      - "5433:5432"          # host 5433 -> avoids clashing with a local Postgres on 5432
+    command:
+      - postgres
+      # Small shared_buffers so the index working set spills out of cache sooner.
+      # This is what makes the random-key (UUIDv4) penalty visible.
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - max_wal_size=8GB
+      # full_page_writes ON (the default) is what turns scattered random index
+      # writes into extra WAL — keep it on, it is part of the story.
+      - -c
+      - full_page_writes=on
+      # fsync/synchronous_commit OFF: this is a throughput benchmark, not a
+      # durability test. It speeds every variant up equally and fairly.
+      - -c
+      - fsync=off
+      - -c
+      - synchronous_commit=off
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Cap container memory so a large dataset genuinely spills past RAM (not just
+    # shared_buffers but the OS page cache too). This is what lets the random-key
+    # collapse show up on a machine that otherwise has plenty of RAM.
+    # Raise/lower together with ROWS. Comment out to let Postgres use all host RAM.
+    mem_limit: 1g
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d uuidbench"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
