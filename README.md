@@ -225,3 +225,12 @@ docker compose down -v    # stop and wipe the volume for a clean re-run
 
 *Companion to the article "Stop Using UUIDv4 as Your Primary Key." Built to be
 re-run, not trusted on faith — which is rather the point.*
+
+---
+
+## Also in this repo
+
+* **`sqlite/`** — a zero-dependency SQLite reproduction (the one behind the
+  article's *headline* chart). `WITHOUT ROWID` makes the PK the clustering key, so
+  the effect is dramatic. Just `python sqlite/sqlite_bench.py`, no Docker needed.
+  See `sqlite/README.md`.
